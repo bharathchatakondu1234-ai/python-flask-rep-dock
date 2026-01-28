@@ -22,4 +22,20 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.USERNAME }}/flask-docker-app:latest
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          # Use the automatic GitHub token (no manual secret needed!)
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          # Note the different naming format: ghcr.io/username/repo-name:tag
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/flask-docker-app:latest
+
