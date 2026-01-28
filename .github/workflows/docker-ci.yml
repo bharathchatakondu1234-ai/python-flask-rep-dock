@@ -4,6 +4,11 @@ on:
   push:
     branches: [ "main" ]
 
+# FIX 1: Grant permissions so GitHub can write to its own registry (GHCR)
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -11,33 +16,28 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # FIX 2: Login to Docker Hub using your secrets
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and Push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: | 
-               ${{ secrets.USERNAME }}/flask-docker-app:latest
+      # FIX 3: Login to GitHub Registry (GHCR)
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          # Use the automatic GitHub token (no manual secret needed!)
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
+      # FIX 4: Build ONE time and push to BOTH registries at once
+      - name: Build and Push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          # Note the different naming format: ghcr.io/username/repo-name:tag
           tags: |
+            ${{ secrets.USERNAME }}/flask-docker-app:latest
             ghcr.io/${{ github.repository_owner }}/flask-docker-app:latest
 
